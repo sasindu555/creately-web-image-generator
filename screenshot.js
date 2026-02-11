@@ -132,16 +132,28 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
     });
   });
 
+  const runStart = Date.now();
+  let successCount = 0;
+  let noTemplateCount = 0;
+  let errorCount = 0;
+
   // 2️⃣ Visit each resolved URL and take a screenshot
   for (let i = 0; i < urls.length; i += 1) {
+    const itemStart = Date.now();
     const { targetUrl, source, templateId: resolvedId, titleText } = await resolveTargetUrl(urls[i]);
+    const currentLabel = titleText || source || 'unknown';
+    console.log(`[${i + 1}/${urls.length}] ${currentLabel}`);
     if (!targetUrl) {
       const timestamp = new Date().toISOString();
-      fs.appendFileSync(logPath, `${timestamp}\t${source}\t|\tNO_TEMPLATE_FOUND\n`);
+      const elapsedMs = Date.now() - itemStart;
+      fs.appendFileSync(logPath, `${timestamp}\t${source} | NO_TEMPLATE_FOUND\n`);
+      console.log(`  status: no-template (${elapsedMs}ms)`);
+      noTemplateCount += 1;
       continue;
     }
 
-    await safeGoto(targetUrl);
+    try {
+      await safeGoto(targetUrl);
 
     // Wait for page to settle before screenshot
     await page.waitForLoadState('domcontentloaded');
@@ -231,8 +243,19 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
     }
 
     const timestamp = new Date().toISOString();
-    fs.appendFileSync(logPath, `${timestamp}\t${source}\t|\t${filename}\n`);
+    fs.appendFileSync(logPath, `${timestamp}\t${source} | ${filename}\n`);
+    const elapsedMs = Date.now() - itemStart;
+    console.log(`  status: success (${elapsedMs}ms)`);
+    successCount += 1;
+    } catch (err) {
+      const elapsedMs = Date.now() - itemStart;
+      console.log(`  status: error (${elapsedMs}ms) ${err && err.message ? err.message : err}`);
+      errorCount += 1;
+    }
   }
+
+  const totalMs = Date.now() - runStart;
+  console.log(`Summary: ${successCount} success, ${noTemplateCount} no-template, ${errorCount} errors, ${totalMs}ms total`);
 
   await context.close();
   await browser.close();
