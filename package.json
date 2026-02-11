@@ -1,0 +1,16 @@
+{
+  "name": "creately-web-image-generator",
+  "version": "1.0.0",
+  "main": "screenshot.js",
+  "scripts": {
+    "capture": "node screenshot.js",
+    "start": "node screenshot.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Generate Creately template screenshots with Playwright",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}
