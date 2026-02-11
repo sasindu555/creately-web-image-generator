@@ -43,6 +43,8 @@ screenshots/capture-log.txt
 ## Input File
 `templates.txt` controls what gets captured.
 
+Note: `templates.txt` is ignored by git. Keep your local entries there.
+
 ### Format
 - One entry per line.
 - Optional title after a comma.
