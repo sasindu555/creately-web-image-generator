@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const { chromium } = require('playwright');
 
 const DEMO_BASE = 'https://creately.com/demo-start/?tempId=';
@@ -35,8 +36,11 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
 
   const widthInput = await ask('Screenshot width (default 1280): ');
   const heightInput = await ask('Screenshot height (default 720): ');
+  const formatInput = await ask('Screenshot format (png/jpeg/webp, default png): ');
   const viewportWidth = Number.parseInt(widthInput, 10) || 1280;
   const viewportHeight = Number.parseInt(heightInput, 10) || 720;
+  const formatRaw = (formatInput || '').trim().toLowerCase();
+  const format = ['png', 'jpeg', 'webp'].includes(formatRaw) ? formatRaw : 'png';
 
   const resolveTargetUrl = async (raw) => {
     const trimmed = raw.trim();
@@ -206,12 +210,25 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
       templateId = 'page';
     }
 
-    const filename = `${templateId}.png`;
+    const filename = `${templateId}.${format}`;
+    const outputPath = path.join('screenshots', filename);
 
-    await page.screenshot({
-      path: path.join('screenshots', filename),
-      fullPage: false,
-    });
+    if (format === 'webp') {
+      const tempPng = path.join('screenshots', `${templateId}.png`);
+      await page.screenshot({
+        path: tempPng,
+        fullPage: false,
+        type: 'png',
+      });
+      await sharp(tempPng).webp().toFile(outputPath);
+      fs.unlinkSync(tempPng);
+    } else {
+      await page.screenshot({
+        path: outputPath,
+        fullPage: false,
+        type: format,
+      });
+    }
 
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logPath, `${timestamp}\t${source}\t${targetUrl}\t${filename}\n`);

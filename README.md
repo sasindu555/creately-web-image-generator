@@ -27,6 +27,7 @@ npm start
 You will be prompted for:
 - Screenshot width (default 1280)
 - Screenshot height (default 720)
+- Screenshot format: png, jpeg, or webp (default png)
 
 Then a browser opens to the Creately login page. Log in manually and press Enter in the terminal to continue.
 
