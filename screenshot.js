@@ -137,7 +137,7 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
     const { targetUrl, source, templateId: resolvedId, titleText } = await resolveTargetUrl(urls[i]);
     if (!targetUrl) {
       const timestamp = new Date().toISOString();
-      fs.appendFileSync(logPath, `${timestamp}\t${source}\tNO_TEMPLATE_FOUND\n`);
+      fs.appendFileSync(logPath, `${timestamp}\t${source}\t|\tNO_TEMPLATE_FOUND\n`);
       continue;
     }
 
@@ -231,7 +231,7 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
     }
 
     const timestamp = new Date().toISOString();
-    fs.appendFileSync(logPath, `${timestamp}\t${source}\t${targetUrl}\t${filename}\n`);
+    fs.appendFileSync(logPath, `${timestamp}\t${source}\t|\t${filename}\n`);
   }
 
   await context.close();
