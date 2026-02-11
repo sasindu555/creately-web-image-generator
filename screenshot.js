@@ -37,10 +37,19 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
   const widthInput = await ask('Screenshot width (default 1280): ');
   const heightInput = await ask('Screenshot height (default 720): ');
   const formatInput = await ask('Screenshot format (png/jpeg/webp, default png): ');
+  const templatePanel = await ask('Keep template panel open? (Y/n): ');
   const viewportWidth = Number.parseInt(widthInput, 10) || 1280;
   const viewportHeight = Number.parseInt(heightInput, 10) || 720;
   const formatRaw = (formatInput || '').trim().toLowerCase();
   const format = ['png', 'jpeg', 'webp'].includes(formatRaw) ? formatRaw : 'png';
+  const parseYesNo = (value, defaultValue) => {
+    const v = String(value || '').trim().toLowerCase();
+    if (!v) return defaultValue;
+    if (['y', 'yes', 'true', '1'].includes(v)) return true;
+    if (['n', 'no', 'false', '0'].includes(v)) return false;
+    return defaultValue;
+  };
+  const keepTemplatePanelOpen = parseYesNo(templatePanel, true);
 
   const resolveTargetUrl = async (raw) => {
     const trimmed = raw.trim();
@@ -165,6 +174,17 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
     }
     await page.waitForTimeout(3000);
 
+    if (!keepTemplatePanelOpen) {
+      try {
+        const templatePanelCloseButton = page.locator('#fab-container-btn');
+        await templatePanelCloseButton.waitFor({ state: 'visible', timeout: 15000 });
+        await templatePanelCloseButton.click();
+        await page.waitForTimeout(500);
+      } catch {
+        // If the template panel isn't present or can't be closed, continue without failing
+      }
+    }
+
     // Update title text before screenshot (only if provided)
     if (titleText) {
       try {
@@ -179,36 +199,38 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
       }
     }
 
-    // Hover zoom control, click toolbar button, then drag canvas 260px to the right
-    try {
-      const zoomHoverTarget = page.locator(
-        'body > app-root > ng-component > div.container-fluid > div.diagram-container.row > div.fx-pointer-events-none.fx-center-vertical.fx-cover.diagram-inner-container > div.base-right-content-area > div > div > div.diagram-viewport-floating-controls > div.diagram-viewport-floating-controls-right-area > div > diagram-toolbar > div > div.dt-block.dt-zoom'
-      );
-      await zoomHoverTarget.waitFor({ state: 'visible', timeout: 15000 });
-      await zoomHoverTarget.hover();
-      const zoomButton = zoomHoverTarget.locator('button');
-      await zoomButton.first().click();
-      await page.waitForTimeout(300);
+    if (keepTemplatePanelOpen) {
+      // Hover zoom control, click toolbar button, then drag canvas to compensate for panel space
+      try {
+        const zoomHoverTarget = page.locator(
+          'body > app-root > ng-component > div.container-fluid > div.diagram-container.row > div.fx-pointer-events-none.fx-center-vertical.fx-cover.diagram-inner-container > div.base-right-content-area > div > div > div.diagram-viewport-floating-controls > div.diagram-viewport-floating-controls-right-area > div > diagram-toolbar > div > div.dt-block.dt-zoom'
+        );
+        await zoomHoverTarget.waitFor({ state: 'visible', timeout: 15000 });
+        await zoomHoverTarget.hover();
+        const zoomButton = zoomHoverTarget.locator('button');
+        await zoomButton.first().click();
+        await page.waitForTimeout(300);
 
-      const panButton = page.locator(
-        'body > app-root > ng-component > div.container-fluid > div.diagram-container.row > div.fx-pointer-events-none.fx-center-vertical.fx-cover.diagram-inner-container > div.base-right-content-area > div > div > div.diagram-viewport-floating-controls > div.diagram-viewport-floating-controls-right-area > div > diagram-toolbar > div > div:nth-child(3) > div:nth-child(2) > button'
-      );
-      await panButton.waitFor({ state: 'visible', timeout: 15000 });
-      await panButton.click();
+        const panButton = page.locator(
+          'body > app-root > ng-component > div.container-fluid > div.diagram-container.row > div.fx-pointer-events-none.fx-center-vertical.fx-cover.diagram-inner-container > div.base-right-content-area > div > div > div.diagram-viewport-floating-controls > div.diagram-viewport-floating-controls-right-area > div > diagram-toolbar > div > div:nth-child(3) > div:nth-child(2) > button'
+        );
+        await panButton.waitFor({ state: 'visible', timeout: 15000 });
+        await panButton.click();
 
-      const viewport = page.viewportSize() || { width: 1440, height: 900 };
-      const startX = Math.floor(viewport.width / 2);
-      const startY = Math.floor(viewport.height / 2);
-      const endX = startX + 100;
-      const endY = startY;
+        const viewport = page.viewportSize() || { width: 1440, height: 900 };
+        const startX = Math.floor(viewport.width / 2);
+        const startY = Math.floor(viewport.height / 2);
+        const endX = startX + 100;
+        const endY = startY;
 
-      await page.mouse.move(startX, startY);
-      await page.mouse.down();
-      await page.mouse.move(endX, endY, { steps: 10 });
-      await page.mouse.up();
-      await page.waitForTimeout(1000);
-    } catch {
-      // If control isn't available, continue without failing
+        await page.mouse.move(startX, startY);
+        await page.mouse.down();
+        await page.mouse.move(endX, endY, { steps: 10 });
+        await page.mouse.up();
+        await page.waitForTimeout(1000);
+      } catch {
+        // If control isn't available, continue without failing
+      }
     }
 
     let templateId = resolvedId || 'page';
