@@ -104,7 +104,8 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
     args: [`--window-size=${viewportWidth},${viewportHeight}`],
-    viewport: { width: viewportWidth, height: viewportHeight }
+    viewport: { width: viewportWidth, height: viewportHeight },
+    deviceScaleFactor: 2,
   });
 
   const page = context.pages()[0] || (await context.newPage());
@@ -244,6 +245,8 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
 
     const filename = `${templateId}.${format}`;
     const outputPath = path.join('screenshots', filename);
+
+    await page.waitForTimeout(1000);
 
     if (format === 'webp') {
       const tempPng = path.join('screenshots', `${templateId}.png`);
