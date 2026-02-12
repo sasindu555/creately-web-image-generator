@@ -43,7 +43,6 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
   const viewportHeight = Number.parseInt(heightInput, 10) || 720;
   const formatRaw = (formatInput || '').trim().toLowerCase();
   const format = ['png', 'jpeg', 'webp'].includes(formatRaw) ? formatRaw : 'png';
-  const userDataDir = path.resolve('browser-data');
   const parseYesNo = (value, defaultValue) => {
     const v = String(value || '').trim().toLowerCase();
     if (!v) return defaultValue;
