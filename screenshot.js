@@ -5,6 +5,7 @@ const { chromium } = require('playwright');
 
 const DEMO_BASE = 'https://creately.com/demo-start/?tempId=';
 const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
+const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:[/?#].*)?$/i;
 
 (async () => {
   const urlsFile = 'templates.txt';
@@ -132,14 +133,15 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
   };
 
 
-  // Wait for user to finish login manually
-  await new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question('Log in manually, then press Enter to continue...', () => {
-      rl.close();
-      resolve();
-    });
-  });
+  // Wait until login flow redirects to the dashboard, then continue automatically.
+  console.log('Waiting for login to complete (dashboard redirect)...');
+  try {
+    await page.waitForURL(POST_LOGIN_URL_RE, { timeout: 300000 });
+  } catch {
+    throw new Error(
+      'Login did not reach https://app.creately.com/d/start/dashboard within 5 minutes.'
+    );
+  }
 
   const runStart = Date.now();
   let successCount = 0;
@@ -246,6 +248,8 @@ const SEARCH_API = 'https://community-api.creately.com/community/search/all/';
 
     const filename = `${templateId}.${format}`;
     const outputPath = path.join('screenshots', filename);
+
+    await page.waitForTimeout(1000);
 
     if (format === 'webp') {
       const tempPng = path.join('screenshots', `${templateId}.png`);
