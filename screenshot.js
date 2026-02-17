@@ -43,6 +43,7 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
   const viewportHeight = Number.parseInt(heightInput, 10) || 720;
   const formatRaw = (formatInput || '').trim().toLowerCase();
   const format = ['png', 'jpeg', 'webp'].includes(formatRaw) ? formatRaw : 'png';
+  const userDataDir = path.resolve('browser-data');
   const parseYesNo = (value, defaultValue) => {
     const v = String(value || '').trim().toLowerCase();
     if (!v) return defaultValue;
@@ -101,16 +102,13 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
     return { targetUrl: `${DEMO_BASE}${id}`, source: term, templateId: id, titleText };
   };
 
-  const browser = await chromium.launch({
+  const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
     args: [`--window-size=${viewportWidth},${viewportHeight}`],
+    viewport: { width: viewportWidth, height: viewportHeight }
   });
 
-  const context = await browser.newContext({
-    viewport: { width: viewportWidth, height: viewportHeight },
-  });
-
-  const page = await context.newPage();
+  const page = context.pages()[0] || (await context.newPage());
 
   // 1️⃣ Manual login (once)
   await page.goto('https://creately.com/login/', {
@@ -284,5 +282,4 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
   console.log(`Summary: ${successCount} success, ${noTemplateCount} no-template, ${errorCount} errors, ${totalMs}ms total`);
 
   await context.close();
-  await browser.close();
 })();
