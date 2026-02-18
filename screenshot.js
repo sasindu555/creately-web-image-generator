@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const sharp = require('sharp');
 const { chromium } = require('playwright');
@@ -253,14 +254,22 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
     await page.waitForTimeout(1000);
 
     if (format === 'webp') {
-      const tempPng = path.join('screenshots', `${templateId}.png`);
-      await page.screenshot({
-        path: tempPng,
-        fullPage: false,
-        type: 'png',
-      });
-      await sharp(tempPng).webp().toFile(outputPath);
-      fs.unlinkSync(tempPng);
+      const tempPng = path.join(
+        os.tmpdir(),
+        `creately-shot-${templateId}-${Date.now()}-${Math.random().toString(36).slice(2)}.png`
+      );
+      try {
+        await page.screenshot({
+          path: tempPng,
+          fullPage: false,
+          type: 'png',
+        });
+        await sharp(tempPng).webp().toFile(outputPath);
+      } finally {
+        if (fs.existsSync(tempPng)) {
+          fs.unlinkSync(tempPng);
+        }
+      }
     } else {
       await page.screenshot({
         path: outputPath,
