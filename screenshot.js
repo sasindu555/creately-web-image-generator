@@ -38,7 +38,8 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
   const widthInput = await ask('Screenshot width (default 1280): ');
   const heightInput = await ask('Screenshot height (default 720): ');
   const formatInput = await ask('Screenshot format (png/jpeg/webp, default png): ');
-  const templatePanel = await ask('Keep template panel open? (Y/n): ');
+  const doubleResInput = await ask('Use 2x resolution screenshot? (y/n, default n): ');
+  const templatePanel = await ask('Keep template panel open? (y/n default y): ');
   const viewportWidth = Number.parseInt(widthInput, 10) || 1280;
   const viewportHeight = Number.parseInt(heightInput, 10) || 720;
   const formatRaw = (formatInput || '').trim().toLowerCase();
@@ -52,6 +53,7 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
     return defaultValue;
   };
   const keepTemplatePanelOpen = parseYesNo(templatePanel, true);
+  const useDoubleResolution = parseYesNo(doubleResInput, false);
 
   const resolveTargetUrl = async (raw) => {
     const trimmed = raw.trim();
@@ -106,7 +108,7 @@ const POST_LOGIN_URL_RE = /^https:\/\/app\.creately\.com\/d\/start\/dashboard(?:
     headless: false,
     args: [`--window-size=${viewportWidth},${viewportHeight}`],
     viewport: { width: viewportWidth, height: viewportHeight },
-    deviceScaleFactor: 2,
+    deviceScaleFactor: useDoubleResolution ? 2 : 1,
   });
 
   const page = context.pages()[0] || (await context.newPage());
